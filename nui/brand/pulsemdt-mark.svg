@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">PulseMDT</title>
+  <desc id="desc">A geometric signal-blue P paired with a white forward channel chevron.</desc>
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="#14151a" stroke="#2d303a" stroke-width="2"/>
+  <path d="M15 50V14H29C36.5 14 41 18.2 41 24.5S36.5 35 29 35H22" fill="none" stroke="#2f9bd6" stroke-width="7" stroke-linecap="square" stroke-linejoin="round"/>
+  <path d="M44 38L52 45L44 52" fill="none" stroke="#f8fafc" stroke-width="4.5" stroke-linecap="square" stroke-linejoin="miter"/>
+</svg>

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulseMDT</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="notif-stack" class="notif-stack"></div>
+
+<div id="stats-modal" class="stats-modal" style="display:none">
+  <div class="stats-modal-inner">
+    <div class="stats-modal-title">Shift Ended</div>
+    <div class="stats-modal-sub">Server status at end of shift</div>
+    <div id="stats-content"></div>
+    <button onclick="document.getElementById('stats-modal').style.display='none'" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:12px">Dismiss</button>
+  </div>
+</div>
+
+<div id="warrant-modal" class="stats-modal" style="display:none">
+  <div class="stats-modal-inner">
+    <div class="stats-modal-title">Issue Warrant</div>
+    <div id="warrant-modal-sub" class="stats-modal-sub"></div>
+    <div class="form-group" style="margin-top:10px">
+      <label class="form-label">Reason</label>
+      <textarea id="warrant-reason" rows="3" placeholder="Reason for the warrant..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Expires In <span style="color:var(--muted);font-weight:400">(days, blank = never)</span></label>
+      <input id="warrant-expires-days" type="number" min="1" placeholder="e.g. 14" />
+    </div>
+    <div style="display:flex;gap:6px;margin-top:4px">
+      <button class="btn btn-primary" onclick="submitWarrant()" style="flex:1">Issue Warrant</button>
+      <button class="btn btn-ghost" onclick="closeWarrantModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="anpr-overlay" class="anpr-overlay">
+  <div class="anpr-header">
+    <span class="anpr-label">ANPR</span>
+    <span id="anpr-status-text" class="anpr-status-text">Scanning...</span>
+  </div>
+  <div id="anpr-plate" class="anpr-plate-num"></div>
+  <div id="anpr-speed" class="anpr-speed"></div>
+  <div id="anpr-badges" class="anpr-badges"></div>
+  <div id="anpr-details" class="anpr-details"></div>
+</div>
+
+<div id="app">
+  <div class="resize-handle rh-nw" data-handle="nw"></div>
+  <div class="resize-handle rh-ne" data-handle="ne"></div>
+  <div class="resize-handle rh-sw" data-handle="sw"></div>
+  <div class="resize-handle rh-se" data-handle="se"></div>
+  <div id="drag-handle" class="header">
+    <div class="window-grip" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="header-identity">
+      <img class="header-logo-mark" src="brand/pulsemdt-mark.svg" alt="" />
+      <div>
+        <div class="header-logo">Pulse<span>MDT</span></div>
+        <div class="window-context">Drag to move</div>
+      </div>
+    </div>
+    <div class="header-status">
+      <div id="cad-access-badge" class="cad-access-badge checking"><span class="dot grey"></span>Checking access</div>
+      <button id="reset-window-btn" class="toolbar-btn icon-only" type="button" title="Reset window position and size" aria-label="Reset window position and size">&#8634;</button>
+      <div id="duty-badge" class="duty-badge off">
+        <span class="dot grey"></span>Off Duty
+      </div>
+      <button id="close-btn" class="close-btn" title="Close">&#x2715;</button>
+    </div>
+  </div>
+
+  <div id="local-workspace" class="body workspace active">
+    <nav class="sidebar" aria-label="CAD sections">
+      <div class="sidebar-heading" data-nav-group="civilian">Civilian services</div>
+      <button class="nav-btn active" data-panel="civilian" data-jobs="civilian"><svg class="nav-icon" viewBox="0 0 256 256" aria-hidden="true"><path d="M128,24a56,56,0,1,0,56,56A56.06,56.06,0,0,0,128,24Zm0,96a40,40,0,1,1,40-40A40,40,0,0,1,128,120Zm95.68,117.85C219.13,197.46,184.69,168,144,168H112c-40.69,0-75.13,29.46-79.68,69.85a8,8,0,0,0,15.9,1.78C51.85,207.34,79.27,184,112,184h32c32.73,0,60.15,23.34,63.78,55.63a8,8,0,0,0,7.94,7.11,8.56,8.56,0,0,0,.9-.05A8,8,0,0,0,223.68,237.85Z"/></svg><span>My records</span></button>
+      <div class="sidebar-heading" data-nav-group="public-safety">Public safety</div>
+      <button class="nav-btn" data-panel="dispatch" data-jobs="dispatch police fire ems"><svg class="nav-icon" viewBox="0 0 256 256" aria-hidden="true"><path d="M128,88a40,40,0,1,0,40,40A40,40,0,0,0,128,88Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,152Zm73.71,7.14a80,80,0,0,1-14.08,22.2,8,8,0,0,1-11.92-10.67,63.95,63.95,0,0,0,0-85.33,8,8,0,1,1,11.92-10.67,80.08,80.08,0,0,1,14.08,84.47ZM69,103.09a64,64,0,0,0,11.26,67.58,8,8,0,0,1-11.92,10.67,79.93,79.93,0,0,1,0-106.67A8,8,0,1,1,80.29,85.34,63.77,63.77,0,0,0,69,103.09ZM248,128a119.58,119.58,0,0,1-34.29,84,8,8,0,1,1-11.42-11.2,103.9,103.9,0,0,0,0-145.56A8,8,0,1,1,213.71,44,119.58,119.58,0,0,1,248,128ZM53.71,200.78A8,8,0,1,1,42.29,212a119.87,119.87,0,0,1,0-168,8,8,0,1,1,11.42,11.2,103.9,103.9,0,0,0,0,145.56Z"/></svg><span>Dispatch</span></button>
+      <button class="nav-btn" data-panel="ncic"><svg class="nav-icon" viewBox="0 0 256 256" aria-hidden="true"><path d="M208,40H48A16,16,0,0,0,32,56v56c0,52.72,25.52,84.67,46.93,102.19,23.06,18.86,46,25.27,47,25.53a8,8,0,0,0,4.2,0c1-.26,23.91-6.67,47-25.53C198.48,196.67,224,164.72,224,112V56A16,16,0,0,0,208,40Zm0,72c0,37.07-13.66,67.16-40.6,89.42A129.3,129.3,0,0,1,128,223.62a128.25,128.25,0,0,1-38.92-21.81C61.82,179.51,48,149.3,48,112l0-56,160,0Z"/></svg><span>Person search</span></button>
+      <button class="nav-btn" data-panel="plate"><svg class="nav-icon" viewBox="0 0 256 256" aria-hidden="true"><path d="M200,112a8,8,0,0,1-8,8H152a8,8,0,0,1,0-16h40A8,8,0,0,1,200,112Zm-8,24H152a8,8,0,0,0,0,16h40a8,8,0,0,0,0-16Zm40-80V200a16,16,0,0,1-16,16H40a16,16,0,0,1-16-16V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56ZM216,200V56H40V200H216Zm-80.26-34a8,8,0,1,1-15.5,4c-2.63-10.26-13.06-18-24.25-18s-21.61,7.74-24.25,18a8,8,0,1,1-15.5-4,39.84,39.84,0,0,1,17.19-23.34,32,32,0,1,1,45.12,0A39.76,39.76,0,0,1,135.75,166ZM96,136a16,16,0,1,0-16-16A16,16,0,0,0,96,136Z"/></svg><span>Plate lookup</span></button>
+      <button class="nav-btn" data-panel="warrants"><svg class="nav-icon" viewBox="0 0 256 256" aria-hidden="true"><path d="M243.32,116.69l-16-16a16,16,0,0,0-20.84-1.53L156.84,49.52a16,16,0,0,0-1.52-20.84l-16-16a16,16,0,0,0-22.63,0l-64,64a16,16,0,0,0,0,22.63l16,16a16,16,0,0,0,20.83,1.52L96.69,124,31.31,189.38A25,25,0,0,0,66.63,224.7L132,159.32l7.17,7.16a16,16,0,0,0,1.52,20.84l16,16a16,16,0,0,0,22.63,0l64-64A16,16,0,0,0,243.32,116.69ZM80,104,64,88l64-64,16,16ZM55.32,213.38a9,9,0,0,1-12.69,0,9,9,0,0,1,0-12.68L108,135.32,120.69,148ZM101,105.66,145.66,61,195,110.34,150.35,155ZM168,192l-16-16,4-4h0l56-56h0l4-4,16,16Z"/></svg><span>Warrants</span></button>
+      <button class="nav-btn" data-panel="reports"><svg class="nav-icon" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Zm-32-80a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,136Zm0,32a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,168Z"/></svg><span>Reports</span></button>
+      <button class="nav-btn" data-panel="roster"><svg class="nav-icon" viewBox="0 0 256 256" aria-hidden="true"><path d="M117.25,157.92a60,60,0,1,0-66.5,0A95.83,95.83,0,0,0,3.53,195.63a8,8,0,1,0,13.4,8.74,80,80,0,0,1,134.14,0,8,8,0,0,0,13.4-8.74A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm210.14,98.7a8,8,0,0,1-11.07-2.33A79.83,79.83,0,0,0,172,168a8,8,0,0,1,0-16,44,44,0,1,0-16.34-84.87,8,8,0,1,1-5.94-14.85,60,60,0,0,1,55.53,105.64,95.83,95.83,0,0,1,47.22,37.71A8,8,0,0,1,250.14,206.7Z"/></svg><span>Units &amp; shifts</span></button>
+      <button class="nav-btn" data-panel="duty"><svg class="nav-icon" viewBox="0 0 256 256" aria-hidden="true"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"/></svg><span>Duty status</span></button>
+      <button class="nav-btn" data-panel="codes"><svg class="nav-icon" viewBox="0 0 256 256" aria-hidden="true"><path d="M208,24H72A32,32,0,0,0,40,56V224a8,8,0,0,0,8,8H192a8,8,0,0,0,0-16H56a16,16,0,0,1,16-16H208a8,8,0,0,0,8-8V32A8,8,0,0,0,208,24Zm-8,160H72a31.82,31.82,0,0,0-16,4.29V56A16,16,0,0,1,72,40H200Z"/></svg><span>Code reference</span></button>
+    </nav>
+
+    <div class="panel active" data-panel="civilian">
+      <div class="panel-header">
+        <div>
+          <span class="panel-title">My Civilian Records</span>
+          <span class="panel-context">Private records linked to your Discord identity</span>
+        </div>
+        <button id="civilian-refresh" class="btn btn-ghost" type="button" style="font-size:11px;padding:4px 8px">Refresh</button>
+      </div>
+      <div class="panel-body civilian-panel-body">
+        <div id="civilian-character-tabs" class="civilian-character-tabs"></div>
+        <div id="civilian-record-content">
+          <div class="empty-state"><strong>Checking your CAD access</strong><span>Your community roles and characters are loading.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="dispatch">
+      <div class="panel-header">
+        <span class="panel-title">Active Calls</span>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-primary" onclick="toggleReportForm()" style="font-size:11px;padding:4px 8px">+ Report</button>
+          <button class="btn btn-ghost" onclick="loadCalls()" style="font-size:11px;padding:4px 8px">Refresh</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="report-call-form" style="display:none;margin-bottom:10px" class="card">
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select id="call-type">
+              <option value="911 Call">911 Call</option>
+              <option value="Traffic Stop">Traffic Stop</option>
+              <option value="Disturbance">Disturbance</option>
+              <option value="Robbery">Robbery</option>
+              <option value="Shots Fired">Shots Fired</option>
+              <option value="Suspicious Person">Suspicious Person</option>
+              <option value="Medical">Medical</option>
+              <option value="Fire">Fire</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <input id="call-location" type="text" placeholder="e.g. Vinewood Blvd" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <input id="call-description" type="text" placeholder="Optional details..." />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select id="call-priority">
+              <option value="3">P3 - Routine</option>
+              <option value="2">P2 - Urgent</option>
+              <option value="1">P1 - Emergency</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <button class="btn btn-primary" onclick="submitCall()" style="flex:1">Submit Call</button>
+            <button class="btn btn-ghost" onclick="toggleReportForm()">Cancel</button>
+          </div>
+        </div>
+        <div id="calls-list">
+          <div class="empty-state">
+            <div class="icon">&#x1F4DE;</div>
+            <div>No active calls</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="ncic">
+      <div class="panel-header">
+        <span class="panel-title">NCIC Person Search</span>
+      </div>
+      <div class="panel-body">
+        <div class="form-group" style="display:flex;gap:6px">
+          <input id="ncic-query" type="text" placeholder="Search by name or character ID..." />
+          <button id="ncic-search" class="btn btn-primary" style="white-space:nowrap">Search</button>
+        </div>
+        <div id="ncic-result"></div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="plate">
+      <div class="panel-header">
+        <span class="panel-title">Plate Lookup</span>
+      </div>
+      <div class="panel-body">
+        <div class="form-group" style="display:flex;gap:6px">
+          <input id="plate-query" type="text" placeholder="Enter plate number..." style="text-transform:uppercase" />
+          <button id="plate-search" class="btn btn-primary" style="white-space:nowrap">Run Plate</button>
+        </div>
+        <div id="plate-result"></div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="warrants">
+      <div class="panel-header">
+        <span class="panel-title">Active Warrants</span>
+        <button class="btn btn-ghost" onclick="loadWarrants()" style="font-size:11px;padding:4px 8px">Refresh</button>
+      </div>
+      <div class="panel-body">
+        <div class="card-sub" style="margin-bottom:10px">Find a person in NCIC or Plate Lookup to issue a new warrant against them.</div>
+        <div id="warrants-list">
+          <div class="empty-state">
+            <div class="icon">&#x2696;</div>
+            <div>No active warrants</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="reports">
+      <div class="panel-header">
+        <span class="panel-title">Incident Reports</span>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-primary" onclick="toggleNewReportForm()" style="font-size:11px;padding:4px 8px">+ New Report</button>
+          <button class="btn btn-ghost" onclick="loadReports()" style="font-size:11px;padding:4px 8px">Refresh</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="new-report-form" style="display:none;margin-bottom:10px" class="card">
+          <div class="form-group">
+            <label class="form-label">Incident Type</label>
+            <select id="report-type">
+              <option value="traffic_stop">Traffic Stop</option>
+              <option value="robbery">Robbery</option>
+              <option value="disturbance">Disturbance</option>
+              <option value="vehicle_pursuit">Vehicle Pursuit</option>
+              <option value="warrant_service">Warrant Service</option>
+              <option value="use_of_force">Use of Force</option>
+              <option value="suspicious_person">Suspicious Person</option>
+              <option value="domestic">Domestic</option>
+              <option value="theft">Theft</option>
+              <option value="assault">Assault</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <input id="report-location" type="text" placeholder="e.g. Vinewood Blvd" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Units Involved</label>
+            <input id="report-units" type="text" placeholder="e.g. 1-ADAM-12, 3-LINCOLN-8" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Narrative</label>
+            <textarea id="report-narrative" rows="4" placeholder="What happened..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Disposition</label>
+            <input id="report-disposition" type="text" placeholder="e.g. Citation issued, Arrest made" />
+          </div>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <button class="btn btn-primary" onclick="submitReport()" style="flex:1">File Report</button>
+            <button class="btn btn-ghost" onclick="toggleNewReportForm()">Cancel</button>
+          </div>
+        </div>
+        <div id="reports-list">
+          <div class="empty-state">
+            <div class="icon">&#x1F4C4;</div>
+            <div>No reports filed yet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="roster">
+      <div class="panel-header">
+        <span class="panel-title">On Duty</span>
+        <button class="btn btn-ghost" onclick="loadRoster()" style="font-size:11px;padding:4px 8px">Refresh</button>
+      </div>
+      <div class="panel-body">
+        <div id="roster-units-list">
+          <div class="empty-state">
+            <div class="icon">&#x1F465;</div>
+            <div>No units on duty</div>
+          </div>
+        </div>
+        <div class="card-title" style="margin-top:16px;margin-bottom:8px">Recent Shifts</div>
+        <div id="roster-shifts-list">
+          <div class="empty-state">
+            <div class="icon">&#x23F1;</div>
+            <div>No shift history</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="duty">
+      <div class="panel-header">
+        <span class="panel-title">Shift &amp; Status</span>
+      </div>
+      <div class="panel-body">
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-title" style="margin-bottom:8px">Start Shift</div>
+          <div id="duty-profile-note" class="roster-profile-note" hidden></div>
+          <div class="form-group">
+            <label class="form-label">Department</label>
+            <select id="shift-dept">
+              <option value="">Select department...</option>
+              <option value="Police">Police</option>
+              <option value="Sheriff">Sheriff</option>
+              <option value="State Trooper">State Trooper</option>
+              <option value="EMS">EMS</option>
+              <option value="Fire">Fire</option>
+              <option value="DOC">DOC</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Rank</label>
+              <input id="shift-role" type="text" placeholder="Officer, Sergeant..." />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Callsign</label>
+              <input id="shift-callsign" type="text" placeholder="A-01" />
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <button id="go-on-duty" class="btn btn-primary" type="button">Go On Duty</button>
+            <button id="go-off-duty" class="btn btn-ghost" type="button" disabled aria-disabled="true">Already Off Duty</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom:8px">Update Status</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-ghost status-btn" data-status="available">
+              <span class="status-dot s-available"></span> Available
+            </button>
+            <button class="btn btn-ghost status-btn" data-status="busy">
+              <span class="status-dot s-busy"></span> Busy
+            </button>
+            <button class="btn btn-ghost status-btn" data-status="on_scene">
+              <span class="status-dot s-busy"></span> On Scene
+            </button>
+            <button class="btn btn-ghost status-btn" data-status="unavailable">
+              <span class="status-dot s-unavail"></span> Unavailable
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <button id="panic-btn" class="btn btn-danger" style="width:100%;justify-content:center;padding:10px">
+            &#x26A0; PANIC BUTTON
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="codes">
+      <div class="panel-header">
+        <span class="panel-title">10-Codes</span>
+        <button class="btn btn-ghost" onclick="loadCodes()" style="font-size:11px;padding:4px 8px">Refresh</button>
+      </div>
+      <div class="panel-body">
+        <div id="codes-list">
+          <div class="empty-state">
+            <div class="icon">&#x1F4F2;</div>
+            <div>No codes configured</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
