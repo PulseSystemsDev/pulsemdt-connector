@@ -3,7 +3,7 @@ game 'gta5'
 
 name 'pulsemdt'
 description 'PulseMDT - Free CAD/MDT for FiveM'
-version '0.4.0'
+version '0.4.1'
 author 'PulseMDT'
 url 'https://pulsemdt.com'
 
