@@ -1,0 +1,27 @@
+name: Package release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stage the resource under its required folder name
+        run: |
+          mkdir -p dist/pulsemdt
+          cp -r client server nui config.example.lua fxmanifest.lua README.md dist/pulsemdt/
+          cd dist
+          zip -r ../pulsemdt-connector.zip pulsemdt
+
+      - name: Publish release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: pulsemdt-connector.zip

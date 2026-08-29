@@ -13,7 +13,7 @@ Free in-game CAD/MDT connector for [PulseMDT](https://pulsemdt.com). Officers pr
 
 ## Installation
 
-1. Drop this folder into your server's `resources` directory as `pulsemdt`.
+1. Download `pulsemdt-connector.zip` from the [latest release](https://github.com/PulseSystemsDev/pulsemdt-connector/releases/latest) and extract it into your server's `resources` directory. It already unzips to a folder named `pulsemdt` - the resource must be named exactly that (FiveM uses the folder name, not anything inside the files), so if you instead use GitHub's "Code -> Download ZIP" button, rename the extracted `pulsemdt-connector-main` folder to `pulsemdt` yourself.
 2. Copy `config.example.lua` to `config.lua` and adjust settings for your server.
 3. Add your API key and guild ID to `server.cfg` as server-only convars (never `setr`):
    ```
@@ -31,4 +31,4 @@ See `config.example.lua` for every option and inline documentation.
 
 - [PulseMDT](https://pulsemdt.com)
 - [pulsesystems.dev](https://pulsesystems.dev)
-- [Releases](https://github.com/PulseSystemsDev/pulsemdt-fivem/releases)
+- [Releases](https://github.com/PulseSystemsDev/pulsemdt-connector/releases)
