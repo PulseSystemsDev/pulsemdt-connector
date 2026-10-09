@@ -13,6 +13,7 @@ local cadAccessByPlayer = {}
 local cadAccessExpiresAt = {}
 local cadAccessRequestAt = {}
 local cadAccessPending = {}
+local cadAccessRetryScheduled = {}
 local nextCadAccessRequestNonce = 0
 local downloadCodes
 local hasCadJob
@@ -392,8 +393,17 @@ local function fetchCadAccess(src, requestNonce, cb)
             return
         end
 
-        if (code == 0 or code == 429 or code >= 500) and cadAccessExpiresAt[src] and cadAccessExpiresAt[src] > os.time() then
-            cb(cadAccessByPlayer[src])
+        if code == 0 or code == 429 or code >= 500 then
+            -- An outage or upstream rate limit is not a verified permission denial.
+            -- Only reuse authorization that is still inside its original TTL.
+            if cadAccessExpiresAt[src] and cadAccessExpiresAt[src] > os.time()
+                and cadAccessByPlayer[src] then
+                cb(cadAccessByPlayer[src])
+            else
+                cb(nil, code == 429
+                    and 'CAD authentication is temporarily rate limited by the service. Try again shortly.'
+                    or 'CAD authentication is temporarily unavailable. Try again shortly.')
+            end
             return
         end
         cadAccessByPlayer[src] = nil
@@ -404,20 +414,39 @@ local function fetchCadAccess(src, requestNonce, cb)
     end)
 end
 
-RegisterNetEvent('pulsemdt:requestCadAccess', function()
-    local src = source
+-- Coalesce access checks made during the local cooldown into a single deferred
+-- refresh. An application cooldown must not masquerade as an HTTP rate limit.
+local function requestCadAccess(src)
+    if not GetPlayerName(src) then return end
     local now = GetGameTimer()
     local previous = cadAccessRequestAt[src]
     local elapsed = previous and (now - previous) or CAD_ACCESS_REQUEST_COOLDOWN_MS
     if cadAccessPending[src] then return end
+
     if elapsed >= 0 and elapsed < CAD_ACCESS_REQUEST_COOLDOWN_MS then
-        if cadAccessExpiresAt[src] and cadAccessExpiresAt[src] > os.time() and cadAccessByPlayer[src] then
+        if cadAccessExpiresAt[src] and cadAccessExpiresAt[src] > os.time()
+            and cadAccessByPlayer[src] then
             TriggerClientEvent('pulsemdt:cadAccess', src, cadAccessByPlayer[src])
-        else
-            TriggerClientEvent('pulsemdt:cadAccessError', src, 'CAD access verification is temporarily rate limited. Try again shortly.')
+            return
+        end
+        if not cadAccessRetryScheduled[src] then
+            local discordId = getDiscordId(src)
+            if not discordId then
+                TriggerClientEvent('pulsemdt:cadAccessError', src,
+                    'A Discord account must be linked to FiveM before using /cad.')
+                return
+            end
+            cadAccessRetryScheduled[src] = discordId
+            SetTimeout(CAD_ACCESS_REQUEST_COOLDOWN_MS - elapsed + 100, function()
+                if cadAccessRetryScheduled[src] ~= discordId then return end
+                cadAccessRetryScheduled[src] = nil
+                if isSameDiscordPlayer(src, discordId) then requestCadAccess(src) end
+            end)
         end
         return
     end
+
+    cadAccessRetryScheduled[src] = nil
     cadAccessRequestAt[src] = now
     nextCadAccessRequestNonce = nextCadAccessRequestNonce + 1
     if nextCadAccessRequestNonce > 2147483647 then nextCadAccessRequestNonce = 1 end
@@ -432,6 +461,10 @@ RegisterNetEvent('pulsemdt:requestCadAccess', function()
             TriggerClientEvent('pulsemdt:cadAccessError', src, errorMessage)
         end
     end)
+end
+
+RegisterNetEvent('pulsemdt:requestCadAccess', function()
+    requestCadAccess(source)
 end)
 
 CreateThread(function()
@@ -1102,6 +1135,7 @@ AddEventHandler('playerDropped', function()
     cadAccessExpiresAt[src] = nil
     cadAccessRequestAt[src] = nil
     cadAccessPending[src] = nil
+    cadAccessRetryScheduled[src] = nil
     dutyTransitions[src] = nil
     local discordId = getDiscordId(src)
     if not discordId then return end
