@@ -20,7 +20,7 @@ jobs:
       - name: Check Lua syntax
         run: |
           find client server -name '*.lua' -print0 | xargs -0 -n1 luac -p
-          luac -p config.lua
+          if [ -f config.lua ]; then luac -p config.lua; fi
           luac -p config.example.lua
       - name: Check browser JavaScript syntax
         run: node --check nui/app.js
