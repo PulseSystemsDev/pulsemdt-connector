@@ -1,0 +1,26 @@
+name: Validate FiveM resource
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua 5.4
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lua5.4
+      - name: Check Lua syntax
+        run: |
+          find client server -name '*.lua' -print0 | xargs -0 -n1 luac -p
+          if [ -f config.lua ]; then luac -p config.lua; fi
+          luac -p config.example.lua
+      - name: Check browser JavaScript syntax
+        run: node --check nui/app.js
