@@ -581,13 +581,24 @@ async function loadCalls() {
     renderDutyRequired('calls-list', 'live dispatch');
     return;
   }
-  if (result && result.offline) {
+  if (result && result.offline && !result.cached) {
+    state.calls = [];
     const container = document.getElementById('calls-list');
     if (container) container.innerHTML = '<div class="empty-state"><div class="icon">📡</div><div>CAD Offline</div></div>';
     return;
   }
-  state.calls = Array.isArray(result) ? result : (result.calls || []);
+  const calls = Array.isArray(result) ? result : result?.calls;
+  state.calls = Array.isArray(calls) ? calls : [];
   renderCalls();
+  if (result && result.offline && result.cached) {
+    const container = document.getElementById('calls-list');
+    if (container) {
+      const notice = document.createElement('div');
+      notice.className = 'empty-state';
+      notice.textContent = 'CAD offline: showing cached calls. Assignments and statuses may be outdated.';
+      container.prepend(notice);
+    }
+  }
 }
 
 function escHtml(str) {
