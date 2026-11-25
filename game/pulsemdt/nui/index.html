@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PulseMDT</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="tablet" class="tablet" data-seat="law" hidden role="dialog" aria-label="PulseMDT terminal">
+  <div class="screen">
+    <header class="menubar">
+      <span class="brand">Pulse<b>MDT</b></span>
+      <span id="title" class="title">MDT</span>
+      <span class="menubar-right">
+        <span id="link" class="link"></span>
+        <button type="button" id="close" class="menubar-close" aria-label="Close terminal">Esc</button>
+      </span>
+    </header>
+    <nav class="taskbar" aria-label="Terminal">
+      <div class="tiles" id="tiles"></div>
+      <div class="taskbar-right">
+        <span id="patch" class="patch" hidden></span>
+        <div class="bigclock"><time id="clock" class="clock">--:--:--</time><span id="date" class="date"></span></div>
+      </div>
+    </nav>
+    <div id="banner" class="banner" hidden></div>
+    <main class="work">
+      <section class="pane calls" aria-label="Calls">
+        <h2 class="pane-head">Calls <span id="pending-count" class="dim"></span></h2>
+        <div class="grid-wrap">
+          <table class="grid">
+            <thead><tr><th>Call</th><th>Pr</th><th>Nature</th><th>Location</th><th>Age</th><th></th></tr></thead>
+            <tbody id="pending"></tbody>
+          </table>
+        </div>
+        <div id="incident" class="incident" hidden></div>
+      </section>
+      <section class="pane side" aria-label="My unit and returns">
+        <div id="view-unit">
+          <div id="signon" class="box" hidden>
+            <h2 class="box-head">Start your shift</h2>
+            <form id="signon-form" class="form">
+              <label>Department<select id="agency"></select></label>
+              <div class="row">
+                <label>Callsign<input id="callsign" class="mono upper" maxlength="20" autocomplete="off"></label>
+                <label>Vehicle<input id="vehicle" class="mono" maxlength="20" autocomplete="off"></label>
+              </div>
+              <button type="submit" class="primary">Sign on</button>
+            </form>
+          </div>
+          <div id="myunit" class="box" hidden>
+            <div class="box-head row-between">
+              <span>My unit <b id="my-callsign" class="mono"></b></span>
+              <button type="button" id="signoff" class="link-btn">Sign off</button>
+            </div>
+            <div id="statuses" class="statuses"></div>
+          </div>
+          <div id="offduty" class="box" hidden>
+            <h2 class="box-head">Not on duty</h2>
+            <p id="offduty-text" class="dim"></p>
+          </div>
+        </div>
+        <div id="view-query" class="box">
+          <form id="query-form" class="query">
+            <div class="seg" role="radiogroup" aria-label="Query type">
+              <button type="button" class="seg-btn" data-kind="plate" aria-checked="true" role="radio">Plate</button>
+              <button type="button" class="seg-btn" data-kind="person" aria-checked="false" role="radio">Name</button>
+            </div>
+            <input id="query-text" class="mono upper" maxlength="80" placeholder="Plate" autocomplete="off">
+            <button type="submit" class="primary">Run</button>
+          </form>
+          <div id="return" class="return" hidden></div>
+          <ul id="history" class="history" hidden></ul>
+        </div>
+        <div id="view-911" class="box" hidden>
+          <h2 class="box-head">Call 911</h2>
+          <form id="call-form" class="form">
+            <textarea id="call-text" rows="3" maxlength="300" placeholder="What is happening and where"></textarea>
+            <button type="submit" class="danger">Send to dispatch</button>
+          </form>
+          <p class="dim small">Your location goes with the call.</p>
+        </div>
+      </section>
+    </main>
+    <footer class="statusbar">
+      <span id="sb-unit" class="strong"></span>
+      <span id="sb-name"></span>
+      <span id="sb-counts"></span>
+      <span id="sb-radio" class="strong" hidden></span>
+      <span class="spacer"></span>
+      <span class="dim">F1 to F9 change status</span>
+    </footer>
+    <ul id="notices" class="notices" aria-live="polite"></ul>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

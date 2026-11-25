@@ -1,0 +1,53 @@
+name: Publish PulseMDT 2 game pack
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "game/pulsemdt/**"
+      - "scripts/build-game-pack.mjs"
+      - "game-pack/RELEASE_NOTES.md"
+      - ".github/workflows/publish-game-pack.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: connector
+      - uses: actions/checkout@v4
+        with:
+          repository: PulseSystemsDev/pulsemdt-scripts
+          ref: 23c08acb196d8feb9b5a0d1ccc2c4fef2d41f564
+          path: pulsemdt-scripts
+
+      - name: Validate and package the 2.0 resources
+        working-directory: connector
+        run: |
+          node --check game/pulsemdt/server/bridge.js
+          node --check game/pulsemdt/nui/app.js
+          node scripts/build-game-pack.mjs ../pulsemdt-scripts --zip
+          unzip -tqq dist/game-pack/pulse-game-pack.zip
+          unzip -Z1 dist/game-pack/pulse-game-pack.zip | grep -Fx '[pulse]/pulsemdt/fxmanifest.lua'
+          unzip -Z1 dist/game-pack/pulse-game-pack.zip | grep -Fx '[pulse]/pulse.cfg'
+          sha256sum dist/game-pack/pulse-game-pack.zip
+
+      - name: Publish the current game pack
+        working-directory: connector
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view 2.0.0 >/dev/null 2>&1; then
+            gh release upload 2.0.0 dist/game-pack/pulse-game-pack.zip --clobber
+          else
+            gh release create 2.0.0 dist/game-pack/pulse-game-pack.zip \
+              --title "PulseMDT 2.0 game pack" \
+              --notes-file game-pack/RELEASE_NOTES.md \
+              --target "$GITHUB_SHA" --latest
+          fi
+

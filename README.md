@@ -1,34 +1,25 @@
-# PulseMDT (FiveM)
+# PulseMDT 2 FiveM game pack
 
-Free in-game CAD/MDT connector for [PulseMDT](https://pulsemdt.com). Officers press a key or run `/cad` to open a live dispatch terminal tied to your community's PulseMDT dashboard: duty status, calls, NCIC and plate lookups, warrants, reports, BOLOs, and unit roster.
+[Download pulse-game-pack.zip](https://github.com/PulseSystemsDev/pulsemdt-connector/releases/latest/download/pulse-game-pack.zip) for the current PulseMDT dashboard. Extract the ZIP into your FiveM server's `resources` folder. It contains `[pulse]/pulsemdt`, 24 `pulse_*` resources, and `[pulse]/pulse.cfg`. Keep the folder names as they are.
 
-## Features
+## Connect a game server
 
-- Local CAD terminal (NUI) with civilian records, dispatch, NCIC/plate lookup, warrants, reports, roster, and duty status panels
-- Discord-role-gated access, re-verified continuously so permission changes apply without a reconnect
-- Offline-resilient: cached reads and a replay queue for writes keep officers working through a CAD outage
-- Optional ANPR integration with Wraith ARS 2X
-- Optional framework bridge (QBCore, ESX, Qbox, or standalone) for character identity, owned vehicles, and economy hooks
-- A `dependency 'pulsemdt'` export layer so other PulseMDT add-on resources share the same connection
+1. In your PulseMDT community, open **Administration → Game servers** and create a server key.
+2. Add these lines to `server.cfg` after your framework resources:
 
-## Installation
-
-1. Download `pulsemdt-connector.zip` from the [latest release](https://github.com/PulseSystemsDev/pulsemdt-connector/releases/latest) and extract it into your server's `resources` directory. It already unzips to a folder named `pulsemdt` - the resource must be named exactly that (FiveM uses the folder name, not anything inside the files), so if you instead use GitHub's "Code -> Download ZIP" button, rename the extracted `pulsemdt-connector-main` folder to `pulsemdt` yourself.
-2. Copy `config.example.lua` to `config.lua` and adjust settings for your server.
-3. Add your API key and guild ID to `server.cfg` as server-only convars (never `setr`):
+   ```cfg
+   set pulsemdt_api_url "https://api.pulsemdt.com"
+   set pulsemdt_server_key "pmdt_gs_..."
+   exec resources/[pulse]/pulse.cfg
    ```
-   set pulsemdt_api_key "your-api-key-here"
-   set pulsemdt_guild_id "your-guild-id-here"
-   ```
-   Get these from your PulseMDT dashboard's Admin page.
-4. Add `ensure pulsemdt` to `server.cfg`.
 
-## Configuration
+   Use `set`, never `setr`, so the server key stays private. If you only want the tablet, copy `[pulse]/pulsemdt` to `resources/pulsemdt` and use `ensure pulsemdt` instead of the `exec` line.
+3. Restart the server. **Administration → Game servers** should show **Connected** within a minute. If it does not, check the `[PulseMDT]` lines in the FXServer console, the full server key, and outbound HTTPS access.
+4. In **Administration → Discord roles**, invite the PulseMDT bot to your Discord server and map Discord roles to PulseMDT roles. Players must join the community with the same Discord account used by FiveM.
 
-See `config.example.lua` for every option and inline documentation.
+The resource includes `/mdt` and the F6 tablet shortcut. See [`game/pulsemdt/README.md`](game/pulsemdt/README.md) for commands, framework support, and integration exports.
 
-## Links
+## Source and older releases
 
-- [PulseMDT](https://pulsemdt.com)
-- [pulsesystems.dev](https://pulsesystems.dev)
-- [Releases](https://github.com/PulseSystemsDev/pulsemdt-connector/releases)
+The PulseMDT 2 resource is in [`game/pulsemdt`](game/pulsemdt). This repository's root resource and older `pulsemdt-connector.zip` releases are for PulseMDT 1.x. PulseMDT 2 ignores the old `pulsemdt_api_key` and `pulsemdt_guild_id` settings. Do not install the old ZIP or copy its `config.example.lua` for a 2.0 server.
+
