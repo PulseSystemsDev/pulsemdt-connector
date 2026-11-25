@@ -1,9 +1,9 @@
-name: Package release
+name: Package legacy connector
 
 on:
   push:
     tags:
-      - "v*"
+      - "v0.*"
 
 permissions:
   contents: write
@@ -14,14 +14,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Stage the resource under its required folder name
+      - name: Stage the legacy resource under its required folder name
         run: |
           mkdir -p dist/pulsemdt
-          cp -r client server nui config.example.lua fxmanifest.lua README.md dist/pulsemdt/
+          cp -r client server nui config.example.lua fxmanifest.lua dist/pulsemdt/
+          cp README.legacy.md dist/pulsemdt/README.md
           cd dist
           zip -r ../pulsemdt-connector.zip pulsemdt
 
-      - name: Publish release asset
+      - name: Publish legacy release asset
         uses: softprops/action-gh-release@v2
         with:
           files: pulsemdt-connector.zip
+
